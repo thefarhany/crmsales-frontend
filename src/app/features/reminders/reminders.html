@@ -1,0 +1,314 @@
+<div class="space-y-6">
+  <!-- Page Header -->
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Ai Reminder</h1>
+    <p class="text-sm text-gray-500 mt-1">Manage automated contract expiry reminders</p>
+  </div>
+
+  <!-- Top Section: Settings + Pending Summary -->
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- ==================== REMINDER SETTINGS (2/3 width) ==================== -->
+    <div *ngIf="isManagerAdmin()" class="lg:col-span-2 bg-white rounded-xl border border-gray-200 p-6">
+      <div class="flex items-center gap-3 mb-2">
+        <div class="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center">
+          <lucide-icon [img]="ClockIcon" class="w-5 h-5 text-blue-600"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="text-lg font-semibold text-gray-900">Reminder Settings</h2>
+          <p class="text-sm text-gray-500">
+            Configure when automated emails should be sent before contract expiration.
+          </p>
+        </div>
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isSettingsLoading" class="flex items-center justify-center py-8">
+        <lucide-icon [img]="Loader2Icon" class="w-6 h-6 text-blue-500 animate-spin"></lucide-icon>
+        <span class="ml-2 text-gray-500">Loading settings...</span>
+      </div>
+
+      <!-- Toggle List -->
+      <div *ngIf="!isSettingsLoading" class="space-y-3 mt-5">
+        <div
+          *ngFor="let rd of reminderDays"
+          class="flex items-center justify-between p-4 rounded-lg border transition-colors"
+          [ngClass]="
+            rd.enabled ? 'border-emerald-200 bg-emerald-50/30' : 'border-gray-200 bg-gray-50/30'
+          "
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold"
+              [ngClass]="
+                rd.enabled ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-200 text-gray-500'
+              "
+            >
+              {{ rd.day }}
+            </div>
+            <span class="font-medium text-gray-700">{{ rd.label }}</span>
+          </div>
+
+          <!-- Toggle Switch -->
+          <button
+            (click)="toggleDay(rd)"
+            [disabled]="settingSaving"
+            class="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+            [ngClass]="getToggleClass(rd.enabled)"
+          >
+            <span
+              class="inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-sm"
+              [ngClass]="getToggleKnobClass(rd.enabled)"
+            ></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Saving indicator -->
+      <div *ngIf="settingSaving" class="mt-3 flex items-center gap-2 text-sm text-blue-600">
+        <lucide-icon [img]="Loader2Icon" class="w-4 h-4 animate-spin"></lucide-icon>
+        Saving...
+      </div>
+    </div>
+
+    <!-- ==================== PENDING SUMMARY (1/3 width) ==================== -->
+    <div
+      class="bg-white rounded-xl border border-gray-200 p-6 flex flex-col items-center justify-center text-center"
+    >
+      <!-- Loading -->
+      <div *ngIf="isPendingLoading" class="flex flex-col items-center gap-3">
+        <lucide-icon [img]="Loader2Icon" class="w-8 h-8 text-blue-500 animate-spin"></lucide-icon>
+        <span class="text-gray-500 text-sm">Loading...</span>
+      </div>
+
+      <!-- Content -->
+      <div *ngIf="!isPendingLoading" class="flex flex-col items-center gap-4">
+        <div class="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center">
+          <lucide-icon [img]="ClockIcon" class="w-8 h-8 text-blue-600"></lucide-icon>
+        </div>
+
+        <div>
+          <p class="text-3xl font-bold text-gray-900">{{ pendingCount }} Pending</p>
+          <p class="text-sm text-gray-500 mt-1">Reminders scheduled for this week</p>
+        </div>
+
+        <button
+          (click)="viewSchedule()"
+          class="px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
+        >
+          <lucide-icon [img]="CalendarIcon" class="w-4 h-4"></lucide-icon>
+          View Schedule
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== REMINDER HISTORY TABLE ==================== -->
+  <div class="bg-white rounded-xl border border-gray-200">
+    <!-- Header + Filter -->
+    <div class="p-6 border-b border-gray-200">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex items-center gap-3">
+          <lucide-icon [img]="MailIcon" class="w-5 h-5 text-gray-600"></lucide-icon>
+          <h2 class="text-lg font-semibold text-gray-900">Reminder History</h2>
+          <span class="text-sm text-gray-500 bg-gray-100 px-2.5 py-0.5 rounded-full">
+            {{ totalElements }} total
+          </span>
+        </div>
+
+        <!-- Status Filter -->
+        <div class="flex items-center gap-2">
+          <lucide-icon [img]="FilterIcon" class="w-4 h-4 text-gray-400"></lucide-icon>
+          <select
+            [(ngModel)]="statusFilter"
+            (ngModelChange)="onFilterChange()"
+            class="text-sm border border-gray-300 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option *ngFor="let opt of statusOptions" [value]="opt">
+              {{ opt === 'ALL' ? 'All Status' : opt }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    <div *ngIf="isRemindersLoading" class="flex items-center justify-center py-12">
+      <lucide-icon [img]="Loader2Icon" class="w-6 h-6 text-blue-500 animate-spin"></lucide-icon>
+      <span class="ml-2 text-gray-500">Loading reminders...</span>
+    </div>
+
+    <!-- Empty State -->
+    <div
+      *ngIf="!isRemindersLoading && reminders.length === 0"
+      class="flex flex-col items-center justify-center py-16 text-center"
+    >
+      <div class="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+        <lucide-icon [img]="MailIcon" class="w-8 h-8 text-gray-400"></lucide-icon>
+      </div>
+      <p class="text-gray-500 font-medium">No reminders found</p>
+      <p class="text-sm text-gray-400 mt-1">
+        Reminders will appear here once contracts are approaching expiry.
+      </p>
+    </div>
+
+    <!-- Table -->
+    <div *ngIf="!isRemindersLoading && reminders.length > 0" class="overflow-x-auto">
+      <table class="w-full">
+        <thead>
+          <tr class="border-b border-gray-200">
+            <th
+              class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Contract
+            </th>
+            <th
+              class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Client
+            </th>
+            <th
+              class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Type
+            </th>
+            <th
+              class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Status
+            </th>
+            <th
+              class="text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Sent At
+            </th>
+            <th
+              class="text-right text-xs font-semibold text-gray-500 uppercase tracking-wider px-6 py-3"
+            >
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <tr *ngFor="let reminder of reminders" class="hover:bg-gray-50 transition-colors">
+            <!-- Contract -->
+            <td class="px-6 py-4">
+              <p class="text-sm font-medium text-gray-900">{{ reminder.contractNumber }}</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                Expires: {{ formatDate(reminder.contractEndDate) }}
+              </p>
+            </td>
+
+            <!-- Client -->
+            <td class="px-6 py-4">
+              <p class="text-sm text-gray-700">{{ reminder.clientName }}</p>
+            </td>
+
+            <!-- Type -->
+            <td class="px-6 py-4">
+              <span class="text-sm text-gray-700">{{ reminder.reminderTypeDescription }}</span>
+            </td>
+
+            <!-- Status -->
+            <td class="px-6 py-4">
+              <span
+                class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold"
+                [ngClass]="getStatusBadgeClass(reminder.status)"
+              >
+                <lucide-icon
+                  *ngIf="reminder.status === 'SENT'"
+                  [img]="CheckCircleIcon"
+                  class="w-3.5 h-3.5 mr-1"
+                ></lucide-icon>
+                <lucide-icon
+                  *ngIf="reminder.status === 'FAILED'"
+                  [img]="XCircleIcon"
+                  class="w-3.5 h-3.5 mr-1"
+                ></lucide-icon>
+                <lucide-icon
+                  *ngIf="reminder.status === 'PENDING'"
+                  [img]="AlertCircleIcon"
+                  class="w-3.5 h-3.5 mr-1"
+                ></lucide-icon>
+                {{ reminder.status }}
+              </span>
+              <!-- Error tooltip for FAILED -->
+              <p
+                *ngIf="reminder.status === 'FAILED' && reminder.errorMessage"
+                class="text-xs text-red-500 mt-1 truncate max-w-[200px]"
+                [title]="reminder.errorMessage"
+              >
+                {{ reminder.errorMessage }}
+              </p>
+            </td>
+
+            <!-- Sent At -->
+            <td class="px-6 py-4">
+              <span class="text-sm text-gray-700">{{ formatDateTime(reminder.sentAt) }}</span>
+            </td>
+
+            <!-- Actions -->
+            <td class="px-6 py-4 text-right">
+              <button
+                (click)="sendReminder(reminder)"
+                [disabled]="sendingReminderId === reminder.id"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <lucide-icon
+                  *ngIf="sendingReminderId !== reminder.id"
+                  [img]="SendIcon"
+                  class="w-4 h-4"
+                ></lucide-icon>
+                <lucide-icon
+                  *ngIf="sendingReminderId === reminder.id"
+                  [img]="Loader2Icon"
+                  class="w-4 h-4 animate-spin"
+                ></lucide-icon>
+                {{ sendingReminderId === reminder.id ? 'Sending...' : 'Send Reminder' }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div
+      *ngIf="!isRemindersLoading && totalPages > 1"
+      class="flex items-center justify-between px-6 py-4 border-t border-gray-200"
+    >
+      <p class="text-sm text-gray-500">
+        Showing {{ currentPage * pageSize + 1 }} to
+        {{ currentPage * pageSize + reminders.length }} of {{ totalElements }}
+      </p>
+      <div class="flex items-center gap-1">
+        <button
+          (click)="goToPage(currentPage - 1)"
+          [disabled]="currentPage === 0"
+          class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <lucide-icon [img]="ChevronLeftIcon" class="w-4 h-4 text-gray-600"></lucide-icon>
+        </button>
+
+        <ng-container *ngFor="let p of pages">
+          <button
+            (click)="goToPage(p)"
+            class="w-8 h-8 rounded-lg text-sm font-medium transition-colors"
+            [ngClass]="
+              p === currentPage ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'
+            "
+          >
+            {{ p + 1 }}
+          </button>
+        </ng-container>
+
+        <button
+          (click)="goToPage(currentPage + 1)"
+          [disabled]="currentPage >= totalPages - 1"
+          class="p-2 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+        >
+          <lucide-icon [img]="ChevronRightIcon" class="w-4 h-4 text-gray-600"></lucide-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

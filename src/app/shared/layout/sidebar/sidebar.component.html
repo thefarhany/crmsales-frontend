@@ -1,0 +1,55 @@
+<aside class="fixed left-0 top-0 h-screen w-60 bg-[#1e293b] text-white flex flex-col z-40">
+  <div class="px-5 py-5 flex items-center gap-2.5 border-b border-white/10">
+    <div class="w-8 h-8 bg-blue-500 rounded-lg flex items-center justify-center">
+      <span class="text-white text-sm font-bold">
+        <lucide-icon [img]="TrendingUp" [size]="16"></lucide-icon>
+      </span>
+    </div>
+    <span class="text-lg font-bold text-blue-400">Digi CRM</span>
+  </div>
+
+  <div class="px-5 pt-5 pb-2">
+    <span class="text-[10px] font-semibold text-gray-400 uppercase tracking-widest">Menu</span>
+  </div>
+
+  <nav class="flex-1 overflow-y-auto px-3 space-y-1">
+    @for (item of menuItems(); track item.label) {
+      <a
+        [routerLink]="item.route"
+        routerLinkActive="bg-blue-600 text-white"
+        [routerLinkActiveOptions]="{ exact: item.route === '/dashboard' }"
+        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+      >
+        <span class="flex items-center shrink-0">
+          <lucide-icon [img]="item.icon" [size]="18"></lucide-icon>
+        </span>
+        <span>{{ item.label }}</span>
+      </a>
+    }
+  </nav>
+
+  @if (currentUser(); as user) {
+    <div class="px-3 py-4 border-t border-white/10">
+      <div class="flex items-center gap-3">
+        <div
+          class="w-9 h-9 rounded-full bg-linear-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shrink-0"
+        >
+          {{ user.fullName.charAt(0).toUpperCase() }}
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-white truncate">{{ user.fullName }}</p>
+          <p class="text-xs text-gray-400 truncate">
+            {{ user.role.replace('_', ' ') | titlecase }}
+          </p>
+        </div>
+        <button
+          (click)="logout()"
+          class="p-1.5 text-gray-400 hover:text-red-400 hover:bg-white/10 rounded-lg transition-colors"
+          title="Logout"
+        >
+          <lucide-icon [img]="LogOutIcon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+    </div>
+  }
+</aside>

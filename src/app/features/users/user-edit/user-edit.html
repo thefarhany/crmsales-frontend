@@ -1,0 +1,184 @@
+@if (isLoading()) {
+  <div class="flex items-center justify-center py-20">
+    <lucide-icon
+      [img]="LoaderCircleIcon"
+      [size]="24"
+      class="text-blue-600 animate-spin"
+    ></lucide-icon>
+    <span class="ml-3 text-gray-500">Loading user data...</span>
+  </div>
+} @else {
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <!-- Header -->
+      <div class="px-6 py-5 border-b border-gray-200">
+        <div class="flex items-center gap-3">
+          <a
+            [routerLink]="['/users']"
+            class="p-2 -ml-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <lucide-icon [img]="ArrowLeftIcon" [size]="20"></lucide-icon>
+          </a>
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">Edit User</h2>
+            <p class="text-sm text-gray-500 mt-0.5">
+              Update information for
+              <span class="font-medium text-gray-700">{{ user()?.fullName }}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Form -->
+      <form [formGroup]="userForm" (ngSubmit)="onSubmit()" class="p-6 space-y-6">
+        <!-- Username (readonly) -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Username</label>
+          <input
+            type="text"
+            [value]="user()?.username"
+            disabled
+            class="w-full px-4 py-2.5 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-500 cursor-not-allowed"
+          />
+          <p class="mt-1.5 text-xs text-gray-400">Username cannot be changed</p>
+        </div>
+
+        <!-- Full Name & Email -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              Full Name <span class="text-red-500">*</span>
+            </label>
+            <input
+              formControlName="fullName"
+              type="text"
+              class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              [class.border-red-500]="f['fullName'].touched && f['fullName'].invalid"
+            />
+            @if (f['fullName'].touched && f['fullName'].errors) {
+              <p class="mt-1.5 text-xs text-red-500">Full name is required</p>
+            }
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              Email Address <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <span
+                class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 flex items-center"
+              >
+                <lucide-icon [img]="MailIcon" [size]="16"></lucide-icon>
+              </span>
+              <input
+                formControlName="email"
+                type="email"
+                class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                [class.border-red-500]="f['email'].touched && f['email'].invalid"
+              />
+            </div>
+            @if (f['email'].touched && f['email'].errors) {
+              <p class="mt-1.5 text-xs text-red-500">
+                @if (f['email'].errors['required']) {
+                  Email is required
+                } @else if (f['email'].errors['email']) {
+                  Please enter a valid email
+                }
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- Phone Number -->
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1.5">Phone Number</label>
+          <div class="relative">
+            <span
+              class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 flex items-center"
+            >
+              <lucide-icon [img]="PhoneIcon" [size]="16"></lucide-icon>
+            </span>
+            <input
+              formControlName="phone"
+              type="tel"
+              placeholder="e.g. +62 812 3456 7890"
+              class="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              [class.border-red-500]="f['phone'].touched && f['phone'].invalid"
+            />
+          </div>
+          @if (f['phone'].touched && f['phone'].errors) {
+            <p class="mt-1.5 text-xs text-red-500">Please enter a valid phone number</p>
+          }
+        </div>
+
+        <!-- Role & Status -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              Role <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <select
+                formControlName="role"
+                class="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white appearance-none"
+              >
+                @for (role of roles; track role.value) {
+                  <option [value]="role.value">{{ role.label }}</option>
+                }
+              </select>
+              <span
+                class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"
+              >
+                <lucide-icon [img]="ChevronDownIcon" [size]="16"></lucide-icon>
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1.5">
+              Status <span class="text-red-500">*</span>
+            </label>
+            <div class="relative">
+              <select
+                formControlName="status"
+                class="w-full px-4 py-2.5 pr-10 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all bg-white appearance-none"
+              >
+                @for (status of statuses; track status.value) {
+                  <option [value]="status.value">{{ status.label }}</option>
+                }
+              </select>
+              <span
+                class="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none flex items-center"
+              >
+                <lucide-icon [img]="ChevronDownIcon" [size]="16"></lucide-icon>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="flex items-center gap-3 pt-4 border-t border-gray-200">
+          <a
+            [routerLink]="['/users']"
+            class="px-5 py-2.5 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg hover:bg-gray-50 transition-colors"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            [disabled]="isSaving()"
+            class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+          >
+            @if (isSaving()) {
+              <lucide-icon [img]="LoaderCircleIcon" [size]="16" class="animate-spin"></lucide-icon>
+              Saving...
+            } @else {
+              <lucide-icon [img]="CheckIcon" [size]="16"></lucide-icon>
+              Save Changes
+            }
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

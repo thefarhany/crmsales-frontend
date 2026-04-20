@@ -1,0 +1,323 @@
+<div class="p-6">
+  <!-- Back + Header -->
+  <div class="mb-6">
+    <button
+      (click)="goBack()"
+      class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-3 transition-colors"
+    >
+      <lucide-icon [img]="ArrowLeftIcon" [size]="16"></lucide-icon>
+      Back to Approvals
+    </button>
+    <div class="flex items-start justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">Approval Workflow</h1>
+        <p class="text-sm text-gray-500 mt-1">Track approval progress for this contract</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="isLoading" class="flex justify-center items-center py-20">
+    <div class="flex flex-col items-center gap-3">
+      <lucide-icon [img]="Loader2Icon" [size]="32" class="text-blue-600 animate-spin"></lucide-icon>
+      <p class="text-sm text-gray-500">Loading workflow...</p>
+    </div>
+  </div>
+
+  <div *ngIf="!isLoading && flow" class="space-y-6">
+    <!-- Contract Info Card -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <div class="flex items-start justify-between">
+        <div class="flex items-start gap-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+            <lucide-icon [img]="FileTextIcon" [size]="20" class="text-blue-600"></lucide-icon>
+          </div>
+          <div>
+            <h2 class="text-lg font-semibold text-gray-900">{{ flow.contractTitle }}</h2>
+            <p class="text-sm text-gray-500 mt-0.5">{{ flow.contractNumber }}</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span
+            class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border"
+            [ngClass]="
+              getContractStatusConfig().bgClass + ' ' + getContractStatusConfig().textClass
+            "
+          >
+            {{ getContractStatusConfig().label }}
+          </span>
+          <button
+            (click)="viewContract()"
+            class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <lucide-icon [img]="FileTextIcon" [size]="14"></lucide-icon>
+            View Contract
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Workflow Timeline -->
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5">
+      <h3 class="text-sm font-semibold text-gray-900 mb-5">Approval Steps</h3>
+
+      <div class="space-y-0">
+        <div *ngFor="let step of flow.steps; let i = index; let last = last">
+          <!-- Step Card -->
+          <div class="flex gap-4">
+            <!-- Timeline Indicator -->
+            <div class="flex flex-col items-center">
+              <div
+                class="w-9 h-9 rounded-full flex items-center justify-center shrink-0 border-2"
+                [ngClass]="{
+                  'border-emerald-400 bg-emerald-50': step.status === 'APPROVED',
+                  'border-red-400 bg-red-50': step.status === 'REJECTED',
+                  'border-amber-400 bg-amber-50': step.status === 'PENDING' && step.isCurrentStep,
+                  'border-gray-200 bg-gray-50': step.status === 'PENDING' && !step.isCurrentStep,
+                }"
+              >
+                <lucide-icon
+                  [img]="getStepIcon(step)"
+                  [size]="18"
+                  [ngClass]="getStepIconClass(step)"
+                ></lucide-icon>
+              </div>
+              <!-- Line -->
+              <div *ngIf="!last" class="w-0.5 h-8 my-1" [ngClass]="getLineClass(step)"></div>
+            </div>
+
+            <!-- Step Content -->
+            <div class="flex-1 rounded-xl border p-4 mb-2" [ngClass]="getStepBorderClass(step)">
+              <div class="flex items-start justify-between">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h4 class="text-sm font-semibold text-gray-900">Level {{ step.level }}</h4>
+                    <span class="text-xs text-gray-500">—</span>
+                    <span class="text-sm text-gray-600">{{ formatRole(step.approverRole) }}</span>
+                  </div>
+
+                  <!-- Status Info -->
+                  <div class="mt-2 space-y-1">
+                    <div
+                      *ngIf="step.status === 'APPROVED'"
+                      class="flex items-center gap-1.5 text-xs text-emerald-600"
+                    >
+                      <lucide-icon [img]="CheckCircle2Icon" [size]="13"></lucide-icon>
+                      Approved by {{ step.approverName }} · {{ formatDate(step.respondedAt) }}
+                    </div>
+                    <div
+                      *ngIf="step.status === 'REJECTED'"
+                      class="flex items-center gap-1.5 text-xs text-red-600"
+                    >
+                      <lucide-icon [img]="XCircleIcon" [size]="13"></lucide-icon>
+                      Rejected by {{ step.approverName }} · {{ formatDate(step.respondedAt) }}
+                    </div>
+                    <div
+                      *ngIf="step.status === 'PENDING' && step.isCurrentStep"
+                      class="flex items-center gap-1.5 text-xs text-amber-600"
+                    >
+                      <lucide-icon [img]="ClockIcon" [size]="13"></lucide-icon>
+                      Waiting for approval · Requested {{ formatDate(step.requestedAt) }}
+                    </div>
+                    <div
+                      *ngIf="step.status === 'PENDING' && !step.isCurrentStep"
+                      class="flex items-center gap-1.5 text-xs text-gray-400"
+                    >
+                      <lucide-icon [img]="LockIcon" [size]="13"></lucide-icon>
+                      Waiting for previous level
+                    </div>
+                  </div>
+
+                  <!-- Notes -->
+                  <p *ngIf="step.notes" class="mt-2 text-xs text-gray-500 italic">
+                    "{{ step.notes }}"
+                  </p>
+
+                  <!-- Rejection Reason -->
+                  <div
+                    *ngIf="step.rejectionReason"
+                    class="mt-2 px-3 py-2 bg-red-50 border border-red-100 rounded-lg"
+                  >
+                    <p class="text-xs text-red-600 font-medium">Rejection Reason:</p>
+                    <p class="text-xs text-red-500 mt-0.5">{{ step.rejectionReason }}</p>
+                  </div>
+                </div>
+
+                <!-- Action Buttons (hanya current step + PENDING) -->
+                <div
+                  *ngIf="step.status === 'PENDING' && step.isCurrentStep"
+                  class="flex items-center gap-2 ml-4 shrink-0"
+                >
+                  <button
+                    (click)="openApproveModal(step, step.approvalId)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors"
+                  >
+                    <lucide-icon [img]="CheckIcon" [size]="14"></lucide-icon>
+                    Approve
+                  </button>
+                  <button
+                    (click)="openRejectModal(step, step.approvalId)"
+                    class="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+                  >
+                    <lucide-icon [img]="XIcon" [size]="14"></lucide-icon>
+                    Reject
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== APPROVE MODAL ==================== -->
+<div
+  *ngIf="showApproveModal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  (click)="showApproveModal = false"
+>
+  <div
+    class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-full bg-emerald-50 flex items-center justify-center">
+        <lucide-icon [img]="CheckCircle2Icon" [size]="20" class="text-emerald-600"></lucide-icon>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">Approve Contract</h3>
+        <p class="text-xs text-gray-500">{{ flow?.contractTitle }}</p>
+      </div>
+    </div>
+
+    <div class="mb-4 p-3 bg-gray-50 rounded-xl">
+      <div class="text-xs text-gray-500 space-y-1">
+        <p><strong>Contract:</strong> {{ flow?.contractNumber }}</p>
+        <p>
+          <strong>Level:</strong> {{ selectedStep?.level }} —
+          {{ formatRole(selectedStep?.approverRole || '') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="mb-6">
+      <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+      <textarea
+        [(ngModel)]="approveNotes"
+        rows="3"
+        placeholder="Add a note..."
+        class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+      ></textarea>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button
+        (click)="showApproveModal = false"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="confirmApprove()"
+        [disabled]="isProcessing"
+        class="px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded-lg hover:bg-emerald-700 disabled:opacity-50"
+      >
+        <span *ngIf="isProcessing" class="flex items-center gap-2">
+          <lucide-icon [img]="Loader2Icon" [size]="16" class="animate-spin"></lucide-icon>
+          Approving...
+        </span>
+        <span *ngIf="!isProcessing">Approve</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== REJECT MODAL ==================== -->
+<div
+  *ngIf="showRejectModal"
+  class="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+  (click)="showRejectModal = false"
+>
+  <div
+    class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 p-6"
+    (click)="$event.stopPropagation()"
+  >
+    <div class="flex items-center gap-3 mb-4">
+      <div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center">
+        <lucide-icon [img]="CircleAlertIcon" [size]="20" class="text-red-600"></lucide-icon>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">Reject Contract</h3>
+        <p class="text-xs text-gray-500">{{ flow?.contractTitle }}</p>
+      </div>
+    </div>
+
+    <div class="mb-4 p-3 bg-gray-50 rounded-xl">
+      <div class="text-xs text-gray-500 space-y-1">
+        <p><strong>Contract:</strong> {{ flow?.contractNumber }}</p>
+        <p>
+          <strong>Level:</strong> {{ selectedStep?.level }} —
+          {{ formatRole(selectedStep?.approverRole || '') }}
+        </p>
+      </div>
+    </div>
+
+    <div class="space-y-3 mb-6">
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+          Rejection Reason <span class="text-red-500">*</span>
+        </label>
+        <textarea
+          [(ngModel)]="rejectReason"
+          rows="3"
+          placeholder="Please provide a reason for rejection..."
+          class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-red-500 outline-none resize-none"
+        ></textarea>
+      </div>
+      <div>
+        <label class="block text-sm font-medium text-gray-700 mb-1">Notes (optional)</label>
+        <textarea
+          [(ngModel)]="rejectNotes"
+          rows="2"
+          placeholder="Additional notes..."
+          class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+        ></textarea>
+      </div>
+    </div>
+
+    <div class="flex justify-end gap-3">
+      <button
+        (click)="showRejectModal = false"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="confirmReject()"
+        [disabled]="isProcessing || !rejectReason.trim()"
+        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50"
+      >
+        <span *ngIf="isProcessing" class="flex items-center gap-2">
+          <lucide-icon [img]="Loader2Icon" [size]="16" class="animate-spin"></lucide-icon>
+          Rejecting...
+        </span>
+        <span *ngIf="!isProcessing">Reject</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== TOAST ==================== -->
+<div
+  *ngIf="showToast"
+  class="fixed bottom-6 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all"
+  [ngClass]="toastType === 'success' ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+>
+  <lucide-icon
+    [img]="toastType === 'success' ? CheckCircle2Icon : XCircleIcon"
+    [size]="20"
+  ></lucide-icon>
+  {{ toastMessage }}
+</div>

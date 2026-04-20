@@ -1,0 +1,129 @@
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Team Sales</p>
+      <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+        <lucide-icon [img]="DollarSignIcon" class="w-5 h-5 text-blue-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.teamSales }}</p>
+    <p class="text-xs text-emerald-400 mt-1">{{ stats.salesGrowth }}</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Pending Approval</p>
+      <div class="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+        <lucide-icon [img]="ClockIcon" class="w-5 h-5 text-yellow-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.pendingApproval }}</p>
+    <p
+      class="text-xs mt-1"
+      [class]="stats.pendingApproval > 0 ? 'text-yellow-400' : 'text-emerald-400'"
+    >
+      {{ stats.pendingNote }}
+    </p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Team Members</p>
+      <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+        <lucide-icon [img]="UsersIcon" class="w-5 h-5 text-purple-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.teamMembers }}</p>
+    <p class="text-xs text-slate-400 mt-1">Active users</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Conversion Rate</p>
+      <div class="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+        <lucide-icon [img]="TrendingUpIcon" class="w-5 h-5 text-emerald-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.conversionRate }}</p>
+    <p class="text-xs text-slate-400 mt-1">Active / Total</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">Team Performance vs Targets</h3>
+    @if (performanceData.length > 0) {
+      <div class="flex items-end gap-3 h-56 px-2">
+        @for (d of performanceData; track d.month) {
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full flex items-end justify-center gap-1 h-44">
+              <div
+                class="w-5 rounded-t bg-blue-500 transition-all duration-300"
+                [style.height.%]="getBarHeight(d.actual)"
+              ></div>
+              <div
+                class="w-5 rounded-t bg-slate-600 transition-all duration-300"
+                [style.height.%]="getBarHeight(d.target)"
+              ></div>
+            </div>
+            <span class="text-slate-400 text-xs mt-1">{{ d.month }}</span>
+          </div>
+        }
+      </div>
+      <div class="flex justify-center gap-6 mt-4">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-blue-500"></span>
+          <span class="text-slate-400 text-xs">Actual</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-slate-600"></span>
+          <span class="text-slate-400 text-xs">Target (Avg)</span>
+        </div>
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No performance data available
+      </div>
+    }
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">Contract Status Overview</h3>
+    @if (contractStatusData.length > 0) {
+      <div class="flex items-center justify-center">
+        <svg viewBox="0 0 200 200" class="w-48 h-48">
+          @for (seg of getDonutSegments(); track $index) {
+            <circle
+              cx="100"
+              cy="100"
+              r="70"
+              fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="30"
+              [attr.stroke-dasharray]="seg.length + ' ' + seg.gap"
+              [attr.stroke-dashoffset]="seg.offset"
+            />
+          }
+          <text x="100" y="96" text-anchor="middle" class="fill-white text-2xl font-bold">
+            {{ totalContracts }}
+          </text>
+          <text x="100" y="114" text-anchor="middle" class="fill-slate-400 text-[11px]">
+            Contracts
+          </text>
+        </svg>
+      </div>
+      <div class="flex flex-wrap justify-center gap-4 mt-4">
+        @for (d of contractStatusData; track d.status) {
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" [style.background-color]="d.color"></span>
+            <span class="text-slate-400 text-xs">{{ d.status }} ({{ d.value }})</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No status data available
+      </div>
+    }
+  </div>
+</div>

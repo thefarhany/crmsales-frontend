@@ -1,0 +1,100 @@
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+  <div class="bg-linear-to-br from-purple-600 to-purple-800 rounded-xl p-5">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-purple-200 text-sm">Total Contract Value</p>
+      <lucide-icon [img]="DollarSignIcon" class="w-5 h-5 text-purple-200"></lucide-icon>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.totalContractValue }}</p>
+    <p class="text-xs text-purple-200 mt-1">📈 {{ stats.yoyGrowth }}</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-slate-400 text-sm">Risk Exposure</p>
+      <lucide-icon [img]="ShieldAlertIcon" class="w-5 h-5 text-slate-400"></lucide-icon>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.riskExposure }}</p>
+    <p class="text-xs mt-1" [class]="stats.riskColor">🟢 {{ stats.riskCompliance }}</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-2">
+      <p class="text-slate-400 text-sm">Active Client Growth</p>
+      <lucide-icon [img]="TrendingUpIcon" class="w-5 h-5 text-slate-400"></lucide-icon>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.clientGrowth }}</p>
+    <p class="text-xs text-slate-400 mt-1">👥 {{ stats.newClients }}</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">Revenue Trends (YTD)</h3>
+    @if (revenueData.length > 0) {
+      <svg viewBox="0 0 500 230" class="w-full">
+        @for (label of revenueYLabels; track label) {
+          <text
+            [attr.x]="15"
+            [attr.y]="getRevenueYPosition(label) + 4"
+            class="fill-slate-500 text-[10px]"
+          >
+            {{ formatYLabel(label) }}
+          </text>
+          <line
+            [attr.x1]="45"
+            [attr.y1]="getRevenueYPosition(label)"
+            [attr.x2]="480"
+            [attr.y2]="getRevenueYPosition(label)"
+            stroke="#334155"
+            stroke-dasharray="4,4"
+          />
+        }
+        <path [attr.d]="revenueAreaPath" fill="url(#bodRevenueGradient)" opacity="0.3" />
+        <path [attr.d]="revenueLinePath" fill="none" stroke="#10b981" stroke-width="2.5" />
+        @for (d of revenueData; track d.month; let i = $index) {
+          <text
+            [attr.x]="20 + (revenueData.length > 1 ? (i / (revenueData.length - 1)) * 460 : 230)"
+            [attr.y]="220"
+            text-anchor="middle"
+            class="fill-slate-400 text-[11px]"
+          >
+            {{ d.month }}
+          </text>
+        }
+        <defs>
+          <linearGradient id="bodRevenueGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#10b981" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#10b981" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No revenue data available
+      </div>
+    }
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">Pipeline Velocity</h3>
+    @if (pipelineData.length > 0) {
+      <div class="flex items-end gap-3 h-56 px-2">
+        @for (d of pipelineData; track d.month) {
+          <div class="flex-1 flex flex-col items-center gap-1">
+            <div class="w-full flex items-end justify-center h-44">
+              <div
+                class="w-8 rounded-t bg-blue-500 transition-all duration-300"
+                [style.height.%]="getPipelineBarHeight(d.value)"
+              ></div>
+            </div>
+            <span class="text-slate-400 text-xs mt-1">{{ d.month }}</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No pipeline data available
+      </div>
+    }
+  </div>
+</div>

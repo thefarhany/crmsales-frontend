@@ -1,0 +1,140 @@
+<p class="text-slate-400 text-sm mb-6">System overview and analytics</p>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Total Users</p>
+      <div class="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center">
+        <lucide-icon [img]="UsersIcon" class="w-5 h-5 text-blue-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.totalUsers }}</p>
+    <p class="text-xs text-emerald-400 mt-1">{{ stats.userGrowth }}</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Pending Approvals</p>
+      <div class="w-9 h-9 rounded-lg bg-yellow-500/10 flex items-center justify-center">
+        <lucide-icon [img]="ActivityIcon" class="w-5 h-5 text-yellow-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.pendingApprovals }}</p>
+    <p
+      class="text-xs mt-1"
+      [class]="stats.pendingApprovals > 0 ? 'text-yellow-400' : 'text-emerald-400'"
+    >
+      {{ stats.pendingNote }}
+    </p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Total Clients</p>
+      <div class="w-9 h-9 rounded-lg bg-purple-500/10 flex items-center justify-center">
+        <lucide-icon [img]="ShieldIcon" class="w-5 h-5 text-purple-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.totalClients }}</p>
+    <p class="text-xs text-slate-400 mt-1">{{ stats.activeClients }} active</p>
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <div class="flex items-center justify-between mb-3">
+      <p class="text-slate-400 text-sm">Active Contracts</p>
+      <div class="w-9 h-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+        <lucide-icon [img]="FileTextIcon" class="w-5 h-5 text-emerald-400"></lucide-icon>
+      </div>
+    </div>
+    <p class="text-2xl font-bold text-white">{{ stats.activeContracts }}</p>
+    <p class="text-xs text-slate-400 mt-1">of {{ stats.totalContracts }} total</p>
+  </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">Contract Activity</h3>
+    @if (systemActivityData.length > 0) {
+      <svg viewBox="0 0 500 230" class="w-full">
+        @for (label of yAxisLabels; track label) {
+          <text [attr.x]="15" [attr.y]="getYPosition(label) + 4" class="fill-slate-500 text-[10px]">
+            {{ label }}
+          </text>
+          <line
+            [attr.x1]="40"
+            [attr.y1]="getYPosition(label)"
+            [attr.x2]="480"
+            [attr.y2]="getYPosition(label)"
+            stroke="#334155"
+            stroke-dasharray="4,4"
+          />
+        }
+        <path [attr.d]="areaPath" fill="url(#adminActivityGradient)" opacity="0.3" />
+        <path [attr.d]="linePath" fill="none" stroke="#3b82f6" stroke-width="2" />
+        @for (d of systemActivityData; track d.month; let i = $index) {
+          <text
+            [attr.x]="
+              20 +
+              (systemActivityData.length > 1 ? (i / (systemActivityData.length - 1)) * 460 : 230)
+            "
+            [attr.y]="220"
+            text-anchor="middle"
+            class="fill-slate-400 text-[11px]"
+          >
+            {{ d.month }}
+          </text>
+        }
+        <defs>
+          <linearGradient id="adminActivityGradient" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.4" />
+            <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.0" />
+          </linearGradient>
+        </defs>
+      </svg>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No activity data available
+      </div>
+    }
+  </div>
+
+  <div class="bg-[#1e293b] rounded-xl p-5 border border-slate-700/50">
+    <h3 class="text-white font-semibold mb-4">User Roles Distribution</h3>
+    @if (userRolesData.length > 0) {
+      <div class="flex items-center justify-center">
+        <svg viewBox="0 0 200 200" class="w-48 h-48">
+          @for (seg of getDonutSegments(); track $index) {
+            <circle
+              cx="100"
+              cy="100"
+              r="70"
+              fill="none"
+              [attr.stroke]="seg.color"
+              stroke-width="30"
+              [attr.stroke-dasharray]="seg.length + ' ' + seg.gap"
+              [attr.stroke-dashoffset]="seg.offset"
+            />
+          }
+          <text x="100" y="96" text-anchor="middle" class="fill-white text-2xl font-bold">
+            {{ data.activeUsers }}
+          </text>
+          <text x="100" y="114" text-anchor="middle" class="fill-slate-400 text-[11px]">
+            Active Users
+          </text>
+        </svg>
+      </div>
+      <div class="flex flex-wrap justify-center gap-4 mt-4">
+        @for (d of userRolesData; track d.role) {
+          <div class="flex items-center gap-2">
+            <span class="w-3 h-3 rounded-full" [style.background-color]="d.color"></span>
+            <span class="text-slate-400 text-xs">{{ d.role }} ({{ d.value }})</span>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="flex items-center justify-center h-48 text-slate-500 text-sm">
+        No user data available
+      </div>
+    }
+  </div>
+</div>

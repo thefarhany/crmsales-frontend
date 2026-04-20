@@ -1,0 +1,154 @@
+<div class="max-w-7xl mx-auto px-4 py-6 space-y-6">
+  <div>
+    <h1 class="text-2xl font-bold text-gray-900">Email Generator</h1>
+    <p class="text-sm text-gray-500 mt-0.5">Generate highly personalized renewal emails using AI</p>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col h-full">
+      <div class="p-5 border-b border-gray-100 flex items-center gap-2">
+        <lucide-angular [img]="SparklesIcon" class="w-5 h-5 text-violet-600"></lucide-angular>
+        <h2 class="text-lg font-semibold text-gray-900">AI Settings</h2>
+      </div>
+
+      <div class="p-5 space-y-5 flex-1">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Select Contract</label>
+          <select
+            [(ngModel)]="selectedContractId"
+            [disabled]="isLoadingContracts || isGenerating"
+            class="w-full text-sm border border-gray-300 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 outline-none"
+          >
+            <option [ngValue]="null">Choose a contract...</option>
+            <option *ngFor="let c of activeContracts" [ngValue]="c.id">
+              {{ c.contractNumber }} - {{ c.client.companyName }}
+            </option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-2">Tone of Voice</label>
+          <div class="flex flex-wrap gap-2">
+            <button
+              *ngFor="let tone of tones"
+              (click)="selectedTone = tone"
+              [disabled]="isGenerating"
+              class="px-4 py-2 text-xs font-medium rounded-full border transition-colors disabled:opacity-50"
+              [ngClass]="
+                selectedTone === tone
+                  ? 'bg-violet-50 text-violet-700 border-violet-200 ring-1 ring-violet-500'
+                  : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+              "
+            >
+              {{ tone | titlecase }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-5 pt-0 mt-auto">
+        <button
+          (click)="generateDraft()"
+          [disabled]="isGenerating || !selectedContractId"
+          class="w-full py-2.5 px-4 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+          [ngClass]="isGenerating ? 'bg-violet-400' : 'bg-violet-600 hover:bg-violet-700'"
+        >
+          <lucide-angular
+            *ngIf="isGenerating"
+            [img]="Loader2Icon"
+            class="w-4 h-4 animate-spin"
+          ></lucide-angular>
+          <lucide-angular
+            *ngIf="!isGenerating"
+            [img]="SparklesIcon"
+            class="w-4 h-4"
+          ></lucide-angular>
+          {{ isGenerating ? 'AI is thinking...' : 'Generate AI Draft' }}
+        </button>
+      </div>
+    </div>
+
+    <div
+      class="lg:col-span-2 bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col min-h-125"
+    >
+      <div
+        class="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50 rounded-t-xl"
+      >
+        <h2 class="text-sm font-medium text-gray-700 flex items-center gap-2">
+          <lucide-angular [img]="PencilIcon" class="w-4 h-4 text-gray-400"></lucide-angular>
+          Message Editor
+        </h2>
+      </div>
+
+      <div
+        *ngIf="!isDraftReady && !isGenerating"
+        class="flex-1 flex flex-col items-center justify-center p-8 text-center"
+      >
+        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mb-4">
+          <lucide-angular [img]="MailIcon" class="w-8 h-8 text-gray-300"></lucide-angular>
+        </div>
+        <p class="text-gray-500 text-sm max-w-sm">
+          Select a contract and generate a draft to start editing your email.
+        </p>
+      </div>
+
+      <div
+        *ngIf="isGenerating"
+        class="flex-1 flex flex-col items-center justify-center p-8 text-center"
+      >
+        <lucide-angular
+          [img]="Loader2Icon"
+          class="w-10 h-10 text-violet-500 animate-spin mb-4"
+        ></lucide-angular>
+        <p class="text-gray-700 font-medium animate-pulse">Drafting personalized email...</p>
+      </div>
+
+      <div *ngIf="isDraftReady && !isGenerating" class="flex flex-col flex-1 h-full p-4">
+        <div class="flex-1 border border-gray-200 rounded-lg overflow-hidden bg-white">
+          <quill-editor
+            [(ngModel)]="draftContent"
+            [modules]="editorModules"
+            theme="snow"
+            [styles]="{ height: '350px', border: 'none', fontSize: '14px', fontFamily: 'inherit' }"
+          >
+          </quill-editor>
+        </div>
+        <p class="text-xs text-gray-400 mt-2 ml-1">
+          Note: Contract details (Table) will be automatically appended below this text.
+        </p>
+
+        <div class="mt-4 flex justify-end">
+          <button
+            (click)="sendEmail()"
+            [disabled]="isSending"
+            class="py-2.5 px-6 rounded-lg text-sm font-medium text-white transition-colors flex items-center justify-center gap-2 disabled:opacity-50 bg-blue-600 hover:bg-blue-700"
+          >
+            <lucide-angular
+              *ngIf="isSending"
+              [img]="Loader2Icon"
+              class="w-4 h-4 animate-spin"
+            ></lucide-angular>
+            <lucide-angular *ngIf="!isSending" [img]="SendIcon" class="w-4 h-4"></lucide-angular>
+            {{ isSending ? 'Sending Email...' : 'Send to Client' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="showToast"
+  class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border"
+  [ngClass]="
+    toastType === 'success'
+      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+      : 'bg-red-50 border-red-200 text-red-800'
+  "
+>
+  <lucide-angular
+    [img]="toastType === 'success' ? CheckCircle2Icon : XCircleIcon"
+    class="w-5 h-5"
+  ></lucide-angular>
+  <p class="text-sm font-medium">{{ toastMessage }}</p>
+</div>

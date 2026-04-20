@@ -1,0 +1,20 @@
+.ql-toolbar svg {
+  max-width: 18px !important;
+  max-height: 18px !important;
+  display: inline-block !important;
+}
+
+.ql-picker-label svg {
+  max-width: 18px !important;
+  max-height: 18px !important;
+  right: 0 !important;
+}
+
+.ql-color-picker .ql-picker-options {
+  padding: 4px !important;
+}
+
+.ql-editor {
+  min-height: 250px;
+  font-size: 14px;
+}

@@ -1,0 +1,400 @@
+<div *ngIf="isLoading" class="flex justify-center items-center py-32">
+  <div class="flex flex-col items-center gap-3">
+    <lucide-icon [img]="Loader2Icon" [size]="32" class="text-blue-600 animate-spin"></lucide-icon>
+    <p class="text-sm text-gray-500">Loading contract data...</p>
+  </div>
+</div>
+
+<div *ngIf="!isLoading" class="space-y-6">
+  <div class="bg-white rounded-2xl shadow-sm border border-gray-100 px-6 py-5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <a
+          routerLink="/contracts"
+          class="p-2 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
+        >
+          <lucide-icon [img]="ArrowLeftIcon" [size]="20"></lucide-icon>
+        </a>
+        <div>
+          <h1 class="text-xl font-bold text-gray-900">Edit Contract</h1>
+          <p class="text-sm text-gray-500 mt-0.5">Fill in the contract details below</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-3">
+        <a
+          routerLink="/contracts"
+          class="px-5 py-2.5 border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+        >
+          Cancel
+        </a>
+        <button
+          type="button"
+          (click)="onSubmit()"
+          [disabled]="isSubmitting"
+          class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-700 disabled:opacity-50 transition-colors shadow-sm"
+        >
+          <lucide-icon *ngIf="!isSubmitting" [img]="SaveIcon" [size]="16"></lucide-icon>
+          <lucide-icon
+            *ngIf="isSubmitting"
+            [img]="Loader2Icon"
+            [size]="16"
+            class="animate-spin"
+          ></lucide-icon>
+          {{ isSubmitting ? 'Saving...' : 'Save Changes' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <form [formGroup]="contractForm">
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+          <lucide-icon [img]="FileTextIcon" [size]="20" class="text-blue-600"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-gray-900">Contract Information</h2>
+          <p class="text-sm text-gray-500">Basic details about the agreement</p>
+        </div>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+            >Contract Title <span class="text-red-500">*</span></label
+          >
+          <input
+            type="text"
+            formControlName="contractTitle"
+            placeholder="Enterprise License Agreement"
+            class="w-full px-4 py-2.5 border rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            [ngClass]="isInvalid('contractTitle') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
+          />
+          <p *ngIf="isInvalid('contractTitle')" class="mt-1 text-xs text-red-500">
+            {{ getError('contractTitle') }}
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+              >Client <span class="text-red-500">*</span></label
+            >
+            <select
+              formControlName="clientId"
+              class="w-full px-4 py-2.5 border rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+              [ngClass]="isInvalid('clientId') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
+            >
+              <option [ngValue]="null" disabled>
+                {{ isLoadingClients ? 'Loading clients...' : 'Select a client' }}
+              </option>
+              <option *ngFor="let client of clients" [ngValue]="client.id">
+                {{ client.companyName }}
+              </option>
+            </select>
+            <p *ngIf="isInvalid('clientId')" class="mt-1 text-xs text-red-500">
+              {{ getError('clientId') }}
+            </p>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+              >Contract Type <span class="text-red-500">*</span></label
+            >
+            <select
+              formControlName="contractType"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            >
+              <option *ngFor="let type of contractTypes" [value]="type">
+                {{ formatEnumLabel(type) }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+            >Description / Scope</label
+          >
+          <textarea
+            formControlName="description"
+            rows="4"
+            placeholder="Brief description of the contract scope..."
+            class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all resize-none"
+          >
+          </textarea>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center">
+            <lucide-icon [img]="DollarSignIcon" [size]="20" class="text-emerald-600"></lucide-icon>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-gray-900">Financial Details</h2>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+              >Total Contract Value (IDR) <span class="text-red-500">*</span></label
+            >
+            <div class="relative">
+              <span
+                class="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm font-medium"
+                >Rp</span
+              >
+              <input
+                type="number"
+                formControlName="contractValue"
+                placeholder="150000000"
+                class="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                [ngClass]="
+                  isInvalid('contractValue') ? 'border-red-300 bg-red-50' : 'border-gray-200'
+                "
+              />
+            </div>
+            <p *ngIf="isInvalid('contractValue')" class="mt-1 text-xs text-red-500">
+              {{ getError('contractValue') }}
+            </p>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+              >Renewal Period</label
+            >
+            <select
+              formControlName="renewalPeriod"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            >
+              <option *ngFor="let period of renewalPeriods" [value]="period">
+                {{ formatEnumLabel(period) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="flex items-center justify-between py-2">
+            <div>
+              <p class="text-sm font-medium text-gray-700">Auto Renewal</p>
+              <p class="text-xs text-gray-400 mt-0.5">Automatically renew when contract expires</p>
+            </div>
+            <button
+              type="button"
+              (click)="
+                contractForm.get('autoRenewal')?.setValue(!contractForm.get('autoRenewal')?.value)
+              "
+              class="w-11 h-6 rounded-full relative transition-colors"
+              [ngClass]="contractForm.get('autoRenewal')?.value ? 'bg-blue-600' : 'bg-gray-200'"
+            >
+              <div
+                class="absolute top-0.5 w-5 h-5 bg-white border border-gray-300 rounded-full transition-all"
+                [ngClass]="
+                  contractForm.get('autoRenewal')?.value ? 'left-5.5 border-white' : 'left-0.5'
+                "
+              ></div>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div class="flex items-center gap-3 mb-6">
+          <div class="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
+            <lucide-icon [img]="CalendarIcon" [size]="20" class="text-purple-600"></lucide-icon>
+          </div>
+          <div>
+            <h2 class="text-base font-bold text-gray-900">Duration & Status</h2>
+          </div>
+        </div>
+
+        <div class="space-y-5">
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+                >Start Date <span class="text-red-500">*</span></label
+              >
+              <input
+                type="date"
+                formControlName="startDate"
+                class="w-full px-4 py-2.5 border rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                [ngClass]="isInvalid('startDate') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
+              />
+              <p *ngIf="isInvalid('startDate')" class="mt-1 text-xs text-red-500">
+                {{ getError('startDate') }}
+              </p>
+            </div>
+            <div>
+              <label
+                class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+                >End Date <span class="text-red-500">*</span></label
+              >
+              <input
+                type="date"
+                formControlName="endDate"
+                class="w-full px-4 py-2.5 border rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                [ngClass]="isInvalid('endDate') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
+              />
+              <p *ngIf="isInvalid('endDate')" class="mt-1 text-xs text-red-500">
+                {{ getError('endDate') }}
+              </p>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wider mb-1.5"
+              >Current Status</label
+            >
+            <select
+              *ngIf="isAdmin"
+              formControlName="status"
+              class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-gray-900 bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+            >
+              <option *ngFor="let s of contractStatuses" [value]="s">
+                {{ formatEnumLabel(s) }}
+              </option>
+            </select>
+            <div
+              *ngIf="!isAdmin"
+              class="flex items-center gap-3 px-4 py-2.5 border border-gray-200 rounded-xl bg-gray-50"
+            >
+              <span
+                [class]="
+                  'inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ' +
+                  getStatusBadgeClass(contractForm.get('status')?.value)
+                "
+              >
+                {{ formatStatusLabel(contractForm.get('status')?.value) }}
+              </span>
+              <span class="text-xs text-gray-400 italic"
+                >Status dikelola melalui approval workflow</span
+              >
+            </div>
+          </div>
+
+          <div class="mt-4 p-4 bg-gray-50 rounded-xl border border-gray-100">
+            <p class="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
+              Duration Preview
+            </p>
+            <div class="flex items-center gap-3">
+              <div class="flex-1 text-center">
+                <p class="text-xs text-gray-400">Start</p>
+                <p class="text-sm font-semibold text-gray-700">
+                  {{ contractForm.get('startDate')?.value || '—' }}
+                </p>
+              </div>
+              <div class="text-gray-300">→</div>
+              <div class="flex-1 text-center">
+                <p class="text-xs text-gray-400">End</p>
+                <p class="text-sm font-semibold text-gray-700">
+                  {{ contractForm.get('endDate')?.value || '—' }}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+      <div class="flex items-center gap-3 mb-6">
+        <div class="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center">
+          <lucide-icon [img]="UploadIcon" [size]="20" class="text-orange-600"></lucide-icon>
+        </div>
+        <div>
+          <h2 class="text-base font-bold text-gray-900">Contract Document</h2>
+          <p class="text-sm text-gray-500">
+            Upload or replace the contract PDF file (optional, max 10MB)
+          </p>
+        </div>
+      </div>
+
+      <div
+        *ngIf="existingFileUrl && !selectedFile"
+        class="flex items-center justify-between p-4 bg-emerald-50 border border-emerald-200 rounded-xl mb-4"
+      >
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+            <span class="text-xs font-bold text-red-600">PDF</span>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-900">{{ getFileName(existingFileUrl) }}</p>
+            <p class="text-xs text-emerald-600">Current file</p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a
+            [href]="existingFileUrl"
+            target="_blank"
+            class="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors"
+          >
+            <lucide-icon [img]="FileDownIcon" [size]="16"></lucide-icon>
+            View
+          </a>
+        </div>
+      </div>
+
+      <div *ngIf="!selectedFile">
+        <label
+          for="contractFile"
+          class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+        >
+          <lucide-icon [img]="UploadIcon" [size]="32" class="text-gray-400 mb-2"></lucide-icon>
+          <p class="text-sm font-medium text-gray-600">
+            {{ existingFileUrl ? 'Click to replace file' : 'Click to upload or drag & drop' }}
+          </p>
+          <p class="text-xs text-gray-400 mt-1">PDF only • Max 10MB</p>
+        </label>
+        <input
+          id="contractFile"
+          type="file"
+          accept=".pdf,application/pdf"
+          class="hidden"
+          (change)="onFileSelected($event)"
+        />
+      </div>
+
+      <div
+        *ngIf="selectedFile"
+        class="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-xl"
+      >
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center">
+            <span class="text-xs font-bold text-red-600">PDF</span>
+          </div>
+          <div>
+            <p class="text-sm font-semibold text-gray-900">{{ selectedFile.name }}</p>
+            <p class="text-xs text-gray-500">
+              {{ formatFileSize(selectedFile.size) }} • New file (will replace existing)
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          (click)="removeFile()"
+          class="p-2 text-red-500 hover:text-red-700 hover:bg-red-100 rounded-lg transition-colors"
+        >
+          <lucide-icon [img]="Trash2Icon" [size]="18"></lucide-icon>
+        </button>
+      </div>
+
+      <p *ngIf="fileError" class="mt-2 text-xs text-red-500">{{ fileError }}</p>
+    </div>
+  </form>
+</div>
+
+<div
+  *ngIf="showToast"
+  class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-lg text-sm font-medium text-white"
+  [ngClass]="{
+    'bg-emerald-600': toastType === 'success',
+    'bg-red-600': toastType === 'error',
+  }"
+>
+  <lucide-icon [img]="toastType === 'success' ? CheckCircle2Icon : XCircleIcon" [size]="20">
+  </lucide-icon>
+  {{ toastMessage }}
+</div>

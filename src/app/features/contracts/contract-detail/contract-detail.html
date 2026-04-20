@@ -1,0 +1,514 @@
+<div *ngIf="isLoading" class="flex items-center justify-center min-h-[60vh]">
+  <div class="text-center">
+    <lucide-angular
+      [img]="Loader2Icon"
+      class="w-8 h-8 text-blue-500 animate-spin mx-auto"
+    ></lucide-angular>
+    <p class="mt-3 text-sm text-gray-500">Loading contract data...</p>
+  </div>
+</div>
+
+<div *ngIf="!isLoading && contract" class="max-w-5xl mx-auto px-4 py-6 space-y-6">
+  <div
+    *ngIf="getExpiryWarning().show"
+    class="flex items-center gap-3 px-4 py-3 rounded-lg border"
+    [ngClass]="[getExpiryWarning().bgClass, getExpiryWarning().borderClass]"
+  >
+    <lucide-angular
+      [img]="AlertTriangleIcon"
+      class="w-5 h-5 shrink-0"
+      [ngClass]="getExpiryWarning().textClass"
+    ></lucide-angular>
+    <p class="text-sm font-medium" [ngClass]="getExpiryWarning().textClass">
+      {{ getExpiryWarning().message }}
+    </p>
+    <button
+      *ngIf="canRenew() && canModify"
+      (click)="renewContract()"
+      class="ml-auto px-3 py-1 text-xs font-medium rounded-md bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-1"
+    >
+      <lucide-angular
+        [img]="RefreshCwIcon"
+        class="w-3.5 h-3.5"
+        [ngClass]="{ 'animate-spin': isRenewing }"
+      ></lucide-angular>
+      Renew Now
+    </button>
+  </div>
+
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <a routerLink="/contracts" class="p-2 rounded-lg hover:bg-gray-100 transition-colors">
+        <lucide-angular [img]="ArrowLeftIcon" class="w-5 h-5 text-gray-600"></lucide-angular>
+      </a>
+      <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ contract.contractTitle }}</h1>
+        <p class="text-sm text-gray-500 mt-0.5">{{ contract.contractNumber }}</p>
+      </div>
+      <span
+        class="ml-3 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border"
+        [ngClass]="[
+          getStatusConfig(contract.status).bgClass,
+          getStatusConfig(contract.status).textClass,
+        ]"
+      >
+        <span
+          class="w-1.5 h-1.5 rounded-full"
+          [ngClass]="getStatusConfig(contract.status).dotClass"
+        ></span>
+        {{ getStatusConfig(contract.status).label }}
+      </span>
+    </div>
+
+    <div *ngIf="canModify" class="flex items-center gap-2">
+      <button
+        *ngIf="canRenew()"
+        (click)="renewContract()"
+        [disabled]="isRenewing"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors disabled:opacity-50"
+      >
+        <lucide-angular
+          [img]="RefreshCwIcon"
+          class="w-4 h-4"
+          [ngClass]="{ 'animate-spin': isRenewing }"
+        ></lucide-angular>
+        {{ isRenewing ? 'Renewing...' : 'Renew Contract' }}
+      </button>
+
+      <button
+        (click)="editContract()"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 border border-gray-300 transition-colors"
+      >
+        <lucide-angular [img]="PencilIcon" class="w-4 h-4"></lucide-angular>
+        Edit
+      </button>
+
+      <button
+        (click)="confirmDelete()"
+        class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 transition-colors"
+      >
+        <lucide-angular [img]="Trash2Icon" class="w-4 h-4"></lucide-angular>
+        Delete
+      </button>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <lucide-angular [img]="FileTextIcon" class="w-5 h-5 text-blue-600"></lucide-angular>
+        <h2 class="text-lg font-semibold text-gray-900">Contract Information</h2>
+      </div>
+      <p class="text-sm text-gray-500 mt-0.5">Basic details about the agreement</p>
+    </div>
+
+    <div class="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >Contract Title</label
+        >
+        <p class="mt-1 text-sm font-medium text-gray-900">{{ contract.contractTitle }}</p>
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >Contract Number</label
+        >
+        <p class="mt-1 text-sm font-mono text-gray-900">{{ contract.contractNumber }}</p>
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Client</label>
+        <p class="mt-1 text-sm font-medium text-gray-900">{{ contract.client.companyName }}</p>
+        <p class="text-xs text-gray-500">{{ contract.client.clientName }}</p>
+      </div>
+
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >Contract Type</label
+        >
+        <p class="mt-1 text-sm font-medium text-gray-900">
+          {{ formatEnumLabel(contract.contractType) }}
+        </p>
+      </div>
+
+      <div class="md:col-span-2" *ngIf="contract.description">
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >Description / Scope</label
+        >
+        <p class="mt-1 text-sm text-gray-700">{{ contract.description }}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center gap-2">
+          <lucide-angular [img]="DollarSignIcon" class="w-5 h-5 text-emerald-600"></lucide-angular>
+          <h2 class="text-lg font-semibold text-gray-900">Financial Details</h2>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Total Contract Value</label
+          >
+          <p class="mt-1 text-xl font-bold text-emerald-600">
+            {{ formatCurrency(contract.contractValue) }}
+          </p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Renewal Period</label
+          >
+          <p class="mt-1 text-sm font-medium text-gray-900">
+            {{ formatEnumLabel(contract.renewalPeriod) }}
+          </p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Auto Renewal</label
+          >
+          <span
+            class="mt-1 inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [ngClass]="
+              contract.autoRenewal ? 'bg-emerald-50 text-emerald-700' : 'bg-gray-100 text-gray-600'
+            "
+          >
+            {{ contract.autoRenewal ? 'Enabled' : 'Disabled' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-100">
+        <div class="flex items-center gap-2">
+          <lucide-angular [img]="CalendarIcon" class="w-5 h-5 text-blue-600"></lucide-angular>
+          <h2 class="text-lg font-semibold text-gray-900">Timeline</h2>
+        </div>
+      </div>
+      <div class="p-6 space-y-4">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >Start Date</label
+            >
+            <p class="mt-1 text-sm font-medium text-gray-900">{{ contract.startDate }}</p>
+          </div>
+          <div>
+            <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+              >End Date</label
+            >
+            <p class="mt-1 text-sm font-medium text-gray-900">{{ contract.endDate }}</p>
+          </div>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Days Until Expiry</label
+          >
+          <p
+            class="mt-1 text-lg font-bold"
+            [ngClass]="{
+              'text-red-600': contract.daysUntilExpiry <= 7,
+              'text-amber-600': contract.daysUntilExpiry > 7 && contract.daysUntilExpiry <= 30,
+              'text-blue-600': contract.daysUntilExpiry > 30 && contract.daysUntilExpiry <= 60,
+              'text-gray-600': contract.daysUntilExpiry > 60,
+            }"
+          >
+            {{ contract.daysUntilExpiry > 0 ? contract.daysUntilExpiry + ' days' : 'Expired' }}
+          </p>
+        </div>
+        <div>
+          <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >Current Status</label
+          >
+          <div class="mt-1">
+            <span
+              class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold border"
+              [ngClass]="[
+                getStatusConfig(contract.status).bgClass,
+                getStatusConfig(contract.status).textClass,
+              ]"
+            >
+              <span
+                class="w-1.5 h-1.5 rounded-full"
+                [ngClass]="getStatusConfig(contract.status).dotClass"
+              ></span>
+              {{ getStatusConfig(contract.status).label }}
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div
+    *ngIf="contract.status !== 'DRAFT' && (approvalFlow || isLoadingApproval)"
+    class="bg-white rounded-xl border border-gray-200 shadow-sm"
+  >
+    <div class="px-6 py-4 border-b border-gray-100">
+      <div class="flex items-center gap-2">
+        <lucide-angular [img]="ShieldCheckIcon" class="w-5 h-5 text-violet-600"></lucide-angular>
+        <h2 class="text-lg font-semibold text-gray-900">Approval Flow</h2>
+      </div>
+      <p class="text-sm text-gray-500 mt-0.5">Multi-level approval timeline for this contract</p>
+    </div>
+
+    <div *ngIf="isLoadingApproval" class="p-6 flex justify-center">
+      <lucide-angular
+        [img]="Loader2Icon"
+        class="w-5 h-5 text-gray-400 animate-spin"
+      ></lucide-angular>
+    </div>
+
+    <div *ngIf="!isLoadingApproval && approvalFlow" class="p-6">
+      <div class="relative">
+        <div
+          *ngFor="let step of approvalFlow.steps; let last = last"
+          class="relative flex gap-4 pb-8"
+          [ngClass]="{ 'pb-0': last }"
+        >
+          <div class="flex flex-col items-center">
+            <div
+              class="w-10 h-10 rounded-full flex items-center justify-center shrink-0 border-2"
+              [ngClass]="{
+                'bg-emerald-100 border-emerald-500': step.status === 'APPROVED',
+                'bg-red-100 border-red-500': step.status === 'REJECTED',
+                'bg-violet-100 border-violet-500 ring-4 ring-violet-50':
+                  step.isCurrentStep && step.status === 'PENDING',
+                'bg-gray-100 border-gray-300': !step.isCurrentStep && step.status === 'PENDING',
+              }"
+            >
+              <lucide-angular
+                *ngIf="step.status === 'APPROVED'"
+                [img]="CheckCircle2Icon"
+                class="w-5 h-5 text-emerald-600"
+              ></lucide-angular>
+              <lucide-angular
+                *ngIf="step.status === 'REJECTED'"
+                [img]="XOctagonIcon"
+                class="w-5 h-5 text-red-600"
+              ></lucide-angular>
+              <lucide-angular
+                *ngIf="step.status === 'PENDING' && step.isCurrentStep"
+                [img]="ClockIcon"
+                class="w-5 h-5 text-violet-600"
+              ></lucide-angular>
+              <lucide-angular
+                *ngIf="step.status === 'PENDING' && !step.isCurrentStep"
+                [img]="ClockIcon"
+                class="w-5 h-5 text-gray-400"
+              ></lucide-angular>
+            </div>
+
+            <div *ngIf="!last" class="w-0.5 flex-1 mt-2" [ngClass]="getStepLineClass(step)"></div>
+          </div>
+
+          <div class="flex-1 min-w-0 pt-1">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="text-sm font-semibold text-gray-900">
+                Level {{ step.level }} — {{ getStepRoleLabel(step) }}
+              </h3>
+              <span
+                class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border"
+                [ngClass]="[getStepStatusBadge(step).bgClass, getStepStatusBadge(step).textClass]"
+              >
+                {{ getStepStatusBadge(step).label }}
+              </span>
+              <span
+                *ngIf="step.isCurrentStep && step.status === 'PENDING'"
+                class="text-xs text-violet-600 font-medium"
+              >
+                ← Awaiting Action
+              </span>
+            </div>
+
+            <p *ngIf="step.approverName" class="mt-1 text-xs text-gray-500">
+              {{ step.status === 'APPROVED' ? 'Approved' : 'Reviewed' }} by
+              <span class="font-medium text-gray-700">{{ step.approverName }}</span>
+            </p>
+
+            <div class="mt-1 flex items-center gap-3 text-xs text-gray-400">
+              <span *ngIf="step.requestedAt"
+                >Requested: {{ formatDateTime(step.requestedAt) }}</span
+              >
+              <span *ngIf="step.respondedAt"
+                >Responded: {{ formatDateTime(step.respondedAt) }}</span
+              >
+            </div>
+
+            <div
+              *ngIf="step.notes"
+              class="mt-2 px-3 py-2 bg-gray-50 rounded-lg border border-gray-100"
+            >
+              <p class="text-xs text-gray-500 font-medium">Notes</p>
+              <p class="text-sm text-gray-700">{{ step.notes }}</p>
+            </div>
+
+            <div
+              *ngIf="step.rejectionReason"
+              class="mt-2 px-3 py-2 bg-red-50 rounded-lg border border-red-100"
+            >
+              <p class="text-xs text-red-500 font-medium">Rejection Reason</p>
+              <p class="text-sm text-red-700">{{ step.rejectionReason }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="approvalFlow.steps.length === 0" class="text-center py-4">
+        <p class="text-sm text-gray-500">No approval records found for this contract.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <lucide-angular [img]="FileDownIcon" class="w-5 h-5 text-orange-600"></lucide-angular>
+          <h2 class="text-lg font-semibold text-gray-900">Contract Document</h2>
+        </div>
+
+        <label
+          *ngIf="canModify"
+          class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-colors"
+          [ngClass]="
+            isUploading
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200'
+          "
+        >
+          <lucide-angular
+            [img]="UploadIcon"
+            class="w-3.5 h-3.5"
+            [ngClass]="{ 'animate-spin': isUploading }"
+          ></lucide-angular>
+          {{
+            isUploading ? 'Uploading...' : contract.contractFileUrl ? 'Replace File' : 'Upload PDF'
+          }}
+          <input
+            type="file"
+            accept=".pdf"
+            class="hidden"
+            (change)="onFileUpload($event)"
+            [disabled]="isUploading"
+          />
+        </label>
+      </div>
+    </div>
+
+    <div class="p-6">
+      <div
+        *ngIf="contract.contractFileUrl"
+        class="flex items-center gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+      >
+        <div class="w-10 h-10 rounded-lg bg-red-100 flex items-center justify-center shrink-0">
+          <lucide-angular [img]="FileTextIcon" class="w-5 h-5 text-red-600"></lucide-angular>
+        </div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900 truncate">
+            {{ getFileName(contract.contractFileUrl) }}
+          </p>
+          <p class="text-xs text-gray-500">Contract document</p>
+        </div>
+        <a
+          [href]="getFileFullUrl(contract.contractFileUrl)"
+          target="_blank"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 transition-colors"
+        >
+          <lucide-angular [img]="FileDownIcon" class="w-3.5 h-3.5"></lucide-angular>
+          Download
+        </a>
+      </div>
+
+      <div *ngIf="!contract.contractFileUrl" class="text-center py-6">
+        <lucide-angular [img]="FileTextIcon" class="w-8 h-8 text-gray-300 mx-auto"></lucide-angular>
+        <p class="mt-2 text-sm text-gray-500">No document attached</p>
+        <p class="text-xs text-gray-400 mt-1">Upload a PDF using the button above</p>
+      </div>
+
+      <p *ngIf="uploadFileError" class="mt-2 text-xs text-red-600">{{ uploadFileError }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 shadow-sm">
+    <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created By</label>
+        <p class="mt-1 text-sm font-medium text-gray-900">{{ contract.createdBy.fullName }}</p>
+        <p class="text-xs text-gray-500">{{ contract.createdBy.email }}</p>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider">Created At</label>
+        <p class="mt-1 text-sm text-gray-900">{{ formatDateTime(contract.createdAt) }}</p>
+      </div>
+      <div>
+        <label class="text-xs font-medium text-gray-500 uppercase tracking-wider"
+          >Last Updated</label
+        >
+        <p class="mt-1 text-sm text-gray-900">{{ formatDateTime(contract.updatedAt) }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div *ngIf="showDeleteModal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="fixed inset-0 bg-black/50" (click)="cancelDelete()"></div>
+  <div class="relative bg-white rounded-xl shadow-xl max-w-md w-full p-6 space-y-4">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center">
+        <lucide-angular [img]="Trash2Icon" class="w-5 h-5 text-red-600"></lucide-angular>
+      </div>
+      <div>
+        <h3 class="text-lg font-semibold text-gray-900">Delete Contract</h3>
+        <p class="text-sm text-gray-500">This action cannot be undone</p>
+      </div>
+    </div>
+
+    <p class="text-sm text-gray-600">
+      Are you sure you want to delete <strong>{{ contract?.contractTitle }}</strong> ({{
+        contract?.contractNumber
+      }})?
+    </p>
+
+    <div class="flex justify-end gap-3">
+      <button
+        (click)="cancelDelete()"
+        class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+      >
+        Cancel
+      </button>
+      <button
+        (click)="deleteContract()"
+        [disabled]="isDeleting"
+        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 disabled:opacity-50 flex items-center gap-2"
+      >
+        <lucide-angular
+          *ngIf="isDeleting"
+          [img]="Loader2Icon"
+          class="w-4 h-4 animate-spin"
+        ></lucide-angular>
+        {{ isDeleting ? 'Deleting...' : 'Delete' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<div
+  *ngIf="showToast"
+  class="fixed bottom-6 right-6 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg border"
+  [ngClass]="
+    toastType === 'success'
+      ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+      : 'bg-red-50 border-red-200 text-red-800'
+  "
+>
+  <lucide-angular
+    [img]="toastType === 'success' ? CheckCircle2Icon : XCircleIcon"
+    class="w-5 h-5"
+  ></lucide-angular>
+  <p class="text-sm font-medium">{{ toastMessage }}</p>
+</div>

@@ -1,11 +1,11 @@
 {
   "/api": {
-    "target": "http://47.128.152.135:8899",
+    "target": "http://52.220.35.232:8899",
     "secure": false,
     "changeOrigin": true
   },
   "/uploads": {
-    "target": "http://47.128.152.135:8899",
+    "target": "http://52.220.35.232:8899",
     "secure": false,
     "changeOrigin": true
   }

@@ -93,7 +93,7 @@
             <h2 class="text-base font-bold text-gray-900">Company Information</h2>
           </div>
 
-          <div class="space-y-5">
+          <div class="space-y-1">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label
@@ -109,9 +109,14 @@
                     isInvalid('companyName') ? 'border-red-300 bg-red-50' : 'border-gray-200'
                   "
                 />
-                <p *ngIf="isInvalid('companyName')" class="text-xs text-red-500 mt-1">
-                  {{ getError('companyName') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('companyName')" class="text-xs text-red-500">
+                    {{ getError('companyName') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('companyName') }}/{{ getValidationLimits('companyName')?.max }}
+                  </p>
+                </div>
               </div>
               <div>
                 <label
@@ -121,15 +126,20 @@
                 <input
                   formControlName="clientName"
                   type="text"
-                  placeholder="e.g. Acme Corporation"
+                  placeholder="e.g. Mr. Kevin Winata"
                   class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   [ngClass]="
                     isInvalid('clientName') ? 'border-red-300 bg-red-50' : 'border-gray-200'
                   "
                 />
-                <p *ngIf="isInvalid('clientName')" class="text-xs text-red-500 mt-1">
-                  {{ getError('clientName') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('clientName')" class="text-xs text-red-500">
+                    {{ getError('clientName') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('clientName') }}/{{ getValidationLimits('clientName')?.max }}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -153,9 +163,14 @@
                     [ngClass]="isInvalid('email') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
                   />
                 </div>
-                <p *ngIf="isInvalid('email')" class="text-xs text-red-500 mt-1">
-                  {{ getError('email') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('email')" class="text-xs text-red-500">
+                    {{ getError('email') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('email') }}/{{ getValidationLimits('email')?.max }}
+                  </p>
+                </div>
               </div>
               <div>
                 <label
@@ -174,6 +189,11 @@
                     placeholder="+62 812 3456 7890"
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
+                </div>
+                <div class="flex justify-between mt-1">
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('phone') }}/{{ getValidationLimits('phone')?.max }}
+                  </p>
                 </div>
               </div>
             </div>
@@ -197,6 +217,9 @@
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
+                <p class="text-xs text-gray-400 mt-1 text-right">
+                  {{ getCharCount('industry') }}/{{ getValidationLimits('industry')?.max }}
+                </p>
               </div>
               <div>
                 <label
@@ -219,9 +242,14 @@
                     "
                   />
                 </div>
-                <p *ngIf="isInvalid('country')" class="text-xs text-red-500 mt-1">
-                  {{ getError('country') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('country')" class="text-xs text-red-500">
+                    {{ getError('country') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('country') }}/{{ getValidationLimits('country')?.max }}
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -244,6 +272,9 @@
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
+                <p class="text-xs text-gray-400 mt-1 text-right">
+                  {{ getCharCount('city') }}/{{ getValidationLimits('city')?.max }}
+                </p>
               </div>
               <div>
                 <label
@@ -256,6 +287,14 @@
                   placeholder="Full office address"
                   class="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                 />
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('address')" class="text-xs text-red-500">
+                    {{ getError('address') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('address') }}/{{ getValidationLimits('address')?.max }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -264,10 +303,10 @@
         <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
           <div class="flex items-center gap-2 mb-6">
             <lucide-icon [img]="UserIcon" [size]="20" class="text-blue-600"></lucide-icon>
-            <h2 class="text-base font-bold text-gray-900">Point of Contact (PIC)</h2>
+            <h2 class="text-base font-bold text-gray-900">Person in Contact (PIC)</h2>
           </div>
 
-          <div class="space-y-5">
+          <div class="space-y-1">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label
@@ -281,9 +320,14 @@
                   class="w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   [ngClass]="isInvalid('picName') ? 'border-red-300 bg-red-50' : 'border-gray-200'"
                 />
-                <p *ngIf="isInvalid('picName')" class="text-xs text-red-500 mt-1">
-                  {{ getError('picName') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('picName')" class="text-xs text-red-500">
+                    {{ getError('picName') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('picName') }}/{{ getValidationLimits('picName')?.max }}
+                  </p>
+                </div>
               </div>
               <div>
                 <label
@@ -303,6 +347,9 @@
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
+                <p class="text-xs text-gray-400 mt-1 text-right">
+                  {{ getCharCount('picPosition') }}/{{ getValidationLimits('picPosition')?.max }}
+                </p>
               </div>
             </div>
 
@@ -328,9 +375,14 @@
                     "
                   />
                 </div>
-                <p *ngIf="isInvalid('picEmail')" class="text-xs text-red-500 mt-1">
-                  {{ getError('picEmail') }}
-                </p>
+                <div class="flex justify-between mt-1">
+                  <p *ngIf="isInvalid('picEmail')" class="text-xs text-red-500">
+                    {{ getError('picEmail') }}
+                  </p>
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('picEmail') }}/{{ getValidationLimits('picEmail')?.max }}
+                  </p>
+                </div>
               </div>
               <div>
                 <label
@@ -350,6 +402,11 @@
                     class="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                   />
                 </div>
+                <div class="flex justify-between mt-1">
+                  <p class="text-xs text-gray-400 ml-auto">
+                    {{ getCharCount('picPhone') }}/{{ getValidationLimits('picPhone')?.max }}
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -368,6 +425,9 @@
             class="w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all resize-none"
           >
           </textarea>
+          <p class="text-xs text-gray-400 mt-1 text-right">
+            {{ getCharCount('notes') }}/{{ getValidationLimits('notes')?.max }}
+          </p>
         </div>
       </div>
     </div>

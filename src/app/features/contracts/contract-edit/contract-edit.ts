@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -62,12 +62,16 @@ export class ContractEditComponent implements OnInit {
   selectedFile: File | null = null;
   fileError: string = '';
   existingFileUrl: string | null = null;
+  isDragging = false;
 
   isAdmin = false;
 
   toastMessage = '';
   toastType: 'success' | 'error' = 'success';
   showToast = false;
+
+  // For formatted currency display
+  displayValue: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -99,6 +103,113 @@ export class ContractEditComponent implements OnInit {
       endDate: ['', [Validators.required]],
       status: [ContractStatus.DRAFT],
     });
+  }
+
+  /**
+   * Setup currency formatting after contract loaded
+   */
+  private setupCurrencyFormatting(): void {
+    const valueControl = this.contractForm.get('contractValue');
+    if (valueControl) {
+      const value = valueControl.value;
+      this.displayValue = this.formatRupiah(value);
+
+      valueControl.valueChanges.subscribe(v => {
+        this.displayValue = this.formatRupiah(v);
+      });
+    }
+  }
+
+  /**
+   * Format number to Rupiah string (1000000 -> 1,000,000)
+   */
+  formatRupiah(value: number): string {
+    if (value === null || value === undefined) return '';
+    return new Intl.NumberFormat('id-ID').format(value);
+  }
+
+  /**
+   * Parse formatted Rupiah string to number
+   */
+  parseRupiah(value: string): number {
+    const cleaned = value.replace(/[^\d]/g, '');
+    return cleaned ? parseInt(cleaned, 10) : 0;
+  }
+
+  /**
+   * Handle currency input
+   */
+  onCurrencyInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const rawValue = input.value;
+    const numericValue = this.parseRupiah(rawValue);
+
+    this.contractForm.get('contractValue')?.setValue(numericValue, { emitEvent: false });
+    this.displayValue = this.formatRupiah(numericValue);
+  }
+
+  onCurrencyFocus(): void {
+    this.displayValue = this.contractForm.get('contractValue')?.value?.toString() || '';
+  }
+
+  onCurrencyBlur(): void {
+    const value = this.contractForm.get('contractValue')?.value || 0;
+    this.displayValue = this.formatRupiah(value);
+  }
+
+  // ========== DRAG & DROP HANDLERS ==========
+
+  @HostListener('dragover', ['$event'])
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  @HostListener('dragleave', ['$event'])
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    const target = event.relatedTarget as HTMLElement;
+    if (!target?.closest('.drop-zone')) {
+      this.isDragging = false;
+    }
+  }
+
+  @HostListener('drop', ['$event'])
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processFile(files[0]);
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files?.length) return;
+
+    this.processFile(input.files[0]);
+    input.value = '';
+  }
+
+  private processFile(file: File): void {
+    this.fileError = '';
+
+    if (file.type !== 'application/pdf') {
+      this.fileError = 'Only PDF files are allowed';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      this.fileError = 'File size must not exceed 10MB';
+      return;
+    }
+
+    this.selectedFile = file;
   }
 
   private loadClients(): void {
@@ -150,6 +261,8 @@ export class ContractEditComponent implements OnInit {
       endDate: contract.endDate,
       status: contract.status,
     });
+    // Setup currency formatting after patching
+    this.setupCurrencyFormatting();
   }
 
   formatEnumLabel(value: string): string {
@@ -174,27 +287,13 @@ export class ContractEditComponent implements OnInit {
     return field.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files?.length) return;
-    const file = input.files[0];
-    this.fileError = '';
-    if (file.type !== 'application/pdf') {
-      this.fileError = 'Only PDF files are allowed';
-      input.value = '';
-      return;
-    }
-    if (file.size > 10 * 1024 * 1024) {
-      this.fileError = 'File size must not exceed 10MB';
-      input.value = '';
-      return;
-    }
-    this.selectedFile = file;
-  }
-
   removeFile(): void {
     this.selectedFile = null;
     this.fileError = '';
+  }
+
+  removeExistingFile(): void {
+    this.existingFileUrl = null;
   }
 
   formatFileSize(bytes: number): string {

@@ -148,9 +148,12 @@
                 >Rp</span
               >
               <input
-                type="number"
-                formControlName="contractValue"
-                placeholder="150000000"
+                type="text"
+                [value]="displayValue"
+                (input)="onCurrencyInput($event)"
+                (focus)="onCurrencyFocus()"
+                (blur)="onCurrencyBlur()"
+                placeholder="1,000,000,000"
                 class="w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
                 [ngClass]="
                   isInvalid('contractValue') ? 'border-red-300 bg-red-50' : 'border-gray-200'
@@ -159,6 +162,9 @@
             </div>
             <p *ngIf="isInvalid('contractValue')" class="mt-1 text-xs text-red-500">
               {{ getError('contractValue') }}
+            </p>
+            <p class="mt-1 text-xs text-emerald-600 font-medium">
+              Preview: Rp {{ formatCurrencyPreview() }}
             </p>
           </div>
 
@@ -337,16 +343,26 @@
         </div>
       </div>
 
-      <div *ngIf="!selectedFile">
+      <div
+        *ngIf="!selectedFile"
+        class="drop-zone"
+        [class.border-blue-400]="isDragging"
+        [class.bg-blue-50]="isDragging"
+        (dragover)="onDragOver($event)"
+        (dragleave)="onDragLeave($event)"
+        (drop)="onDrop($event)"
+      >
         <label
           for="contractFile"
           class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50/50 transition-all"
+          [ngClass]="{ 'border-blue-500 bg-blue-50': isDragging }"
         >
           <lucide-icon [img]="UploadIcon" [size]="32" class="text-gray-400 mb-2"></lucide-icon>
           <p class="text-sm font-medium text-gray-600">
             {{ existingFileUrl ? 'Click to replace file' : 'Click to upload or drag & drop' }}
           </p>
           <p class="text-xs text-gray-400 mt-1">PDF only • Max 10MB</p>
+          <p *ngIf="isDragging" class="text-xs text-blue-500 mt-1 font-medium">Release to drop file</p>
         </label>
         <input
           id="contractFile"

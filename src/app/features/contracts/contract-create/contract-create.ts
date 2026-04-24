@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -49,10 +49,14 @@ export class ContractCreateComponent implements OnInit {
 
   selectedFile: File | null = null;
   fileError: string = '';
+  isDragging = false;
 
   toastMessage = '';
   toastType: 'success' | 'error' = 'success';
   showToast = false;
+
+  // For formatted currency display
+  displayValue: string = '';
 
   constructor(
     private fb: FormBuilder,
@@ -64,6 +68,7 @@ export class ContractCreateComponent implements OnInit {
   ngOnInit(): void {
     this.initForm();
     this.loadClients();
+    this.setupCurrencyFormatting();
   }
 
   private initForm(): void {
@@ -78,6 +83,72 @@ export class ContractCreateComponent implements OnInit {
       startDate: ['', [Validators.required]],
       endDate: ['', [Validators.required]],
     });
+  }
+
+  /**
+   * Setup currency formatting for contract value
+   */
+  private setupCurrencyFormatting(): void {
+    const valueControl = this.contractForm.get('contractValue');
+    if (valueControl) {
+      // Initialize display value
+      this.updateDisplayValue(valueControl.value);
+
+      valueControl.valueChanges.subscribe(value => {
+        this.updateDisplayValue(value);
+      });
+    }
+  }
+
+  private updateDisplayValue(value: number): void {
+    if (value !== null && value !== undefined) {
+      this.displayValue = this.formatRupiah(value);
+    } else {
+      this.displayValue = '';
+    }
+  }
+
+  /**
+   * Format number to Rupiah string (1000000 -> 1,000,000)
+   */
+  formatRupiah(value: number): string {
+    return new Intl.NumberFormat('id-ID').format(value);
+  }
+
+  /**
+   * Parse formatted Rupiah string to number
+   */
+  parseRupiah(value: string): number {
+    const cleaned = value.replace(/[^\d]/g, '');
+    return cleaned ? parseInt(cleaned, 10) : 0;
+  }
+
+  /**
+   * Handle currency input
+   */
+  onCurrencyInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const rawValue = input.value;
+    const numericValue = this.parseRupiah(rawValue);
+
+    // Update form control with numeric value
+    this.contractForm.get('contractValue')?.setValue(numericValue, { emitEvent: false });
+    this.displayValue = this.formatRupiah(numericValue);
+  }
+
+  /**
+   * Handle currency focus - show raw value
+   */
+  onCurrencyFocus(): void {
+    this.displayValue = this.contractForm.get('contractValue')?.value?.toString() || '';
+  }
+
+  /**
+   * Handle currency blur - format value
+   */
+  onCurrencyBlur(): void {
+    const value = this.contractForm.get('contractValue')?.value || 0;
+    this.displayValue = this.formatRupiah(value);
   }
 
   private loadClients(): void {
@@ -130,22 +201,60 @@ export class ContractCreateComponent implements OnInit {
     return field.replace(/([A-Z])/g, ' $1').replace(/^./, (s) => s.toUpperCase());
   }
 
+  // ========== DRAG & DROP HANDLERS ==========
+
+  @HostListener('dragover', ['$event'])
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = true;
+  }
+
+  @HostListener('dragleave', ['$event'])
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    // Only set isDragging to false if leaving the drop zone (not entering a child)
+    const target = event.relatedTarget as HTMLElement;
+    if (!target?.closest('.drop-zone')) {
+      this.isDragging = false;
+    }
+  }
+
+  @HostListener('drop', ['$event'])
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragging = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.processFile(files[0]);
+    }
+  }
+
   onFileSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (!input.files?.length) return;
 
-    const file = input.files[0];
+    this.processFile(input.files[0]);
+    // Reset input value biar bisa select file yang sama lagi
+    input.value = '';
+  }
+
+  /**
+   * Process file (validate dan set)
+   */
+  private processFile(file: File): void {
     this.fileError = '';
 
     if (file.type !== 'application/pdf') {
       this.fileError = 'Only PDF files are allowed';
-      input.value = '';
       return;
     }
 
     if (file.size > 10 * 1024 * 1024) {
       this.fileError = 'File size must not exceed 10MB';
-      input.value = '';
       return;
     }
 

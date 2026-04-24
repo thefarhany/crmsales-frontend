@@ -30,6 +30,23 @@ import { ClientService } from '../../../core/services/client.service';
 import { ClientResponse } from '../../../core/models/entity/client.model';
 import { ClientStatus } from '../../../core/models/enums/enums.model';
 
+// Validation constants
+const VALIDATION = {
+  COMPANY_NAME: { min: 2, max: 200 },
+  CLIENT_NAME: { min: 2, max: 100 },
+  EMAIL: { min: 5, max: 100 },
+  PHONE: { min: 10, max: 20 },
+  INDUSTRY: { min: 2, max: 100 },
+  CITY: { min: 2, max: 100 },
+  COUNTRY: { min: 2, max: 100 },
+  PIC_NAME: { min: 2, max: 100 },
+  PIC_EMAIL: { min: 5, max: 100 },
+  PIC_PHONE: { min: 10, max: 20 },
+  PIC_POSITION: { min: 2, max: 100 },
+  ADDRESS: { min: 10, max: 500 },
+  NOTES: { min: 0, max: 1000 },
+};
+
 @Component({
   selector: 'app-client-edit',
   standalone: true,
@@ -80,20 +97,41 @@ export class ClientEditComponent implements OnInit {
 
   private initForm(): void {
     this.clientForm = this.fb.group({
-      companyName: ['', [Validators.required, Validators.maxLength(200)]],
-      clientName: ['', [Validators.required, Validators.maxLength(100)]],
-      email: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      phone: ['', [Validators.maxLength(20)]],
-      industry: ['', [Validators.maxLength(100)]],
-      address: [''],
-      city: ['', [Validators.maxLength(100)]],
-      country: ['Indonesia', [Validators.required, Validators.maxLength(100)]],
+      companyName: ['', [Validators.required, Validators.minLength(VALIDATION.COMPANY_NAME.min), Validators.maxLength(VALIDATION.COMPANY_NAME.max)]],
+      clientName: ['', [Validators.required, Validators.minLength(VALIDATION.CLIENT_NAME.min), Validators.maxLength(VALIDATION.CLIENT_NAME.max)]],
+      email: ['', [Validators.required, Validators.email, Validators.minLength(VALIDATION.EMAIL.min), Validators.maxLength(VALIDATION.EMAIL.max)]],
+      phone: ['', [Validators.minLength(VALIDATION.PHONE.min), Validators.maxLength(VALIDATION.PHONE.max)]],
+      industry: ['', [Validators.minLength(VALIDATION.INDUSTRY.min), Validators.maxLength(VALIDATION.INDUSTRY.max)]],
+      address: ['', [Validators.minLength(VALIDATION.ADDRESS.min), Validators.maxLength(VALIDATION.ADDRESS.max)]],
+      city: ['', [Validators.minLength(VALIDATION.CITY.min), Validators.maxLength(VALIDATION.CITY.max)]],
+      country: ['Indonesia', [Validators.required, Validators.minLength(VALIDATION.COUNTRY.min), Validators.maxLength(VALIDATION.COUNTRY.max)]],
       status: [ClientStatus.ACTIVE],
-      picName: ['', [Validators.required, Validators.maxLength(100)]],
-      picEmail: ['', [Validators.required, Validators.email, Validators.maxLength(100)]],
-      picPhone: ['', [Validators.maxLength(20)]],
-      picPosition: ['', [Validators.maxLength(100)]],
-      notes: [''],
+      picName: ['', [Validators.required, Validators.minLength(VALIDATION.PIC_NAME.min), Validators.maxLength(VALIDATION.PIC_NAME.max)]],
+      picEmail: ['', [Validators.required, Validators.email, Validators.minLength(VALIDATION.PIC_EMAIL.min), Validators.maxLength(VALIDATION.PIC_EMAIL.max)]],
+      picPhone: ['', [Validators.minLength(VALIDATION.PIC_PHONE.min), Validators.maxLength(VALIDATION.PIC_PHONE.max)]],
+      picPosition: ['', [Validators.minLength(VALIDATION.PIC_POSITION.min), Validators.maxLength(VALIDATION.PIC_POSITION.max)]],
+      notes: ['', [Validators.maxLength(VALIDATION.NOTES.max)]],
+    });
+
+    // Auto-format phone numbers
+    this.setupPhoneFormatting();
+  }
+
+  /**
+   * Setup phone number auto-formatting (08... -> +62...)
+   */
+  private setupPhoneFormatting(): void {
+    const phoneFields = ['phone', 'picPhone'];
+    phoneFields.forEach(field => {
+      const control = this.clientForm.get(field);
+      if (control) {
+        control.valueChanges.subscribe(value => {
+          if (value && value.startsWith('0') && !value.startsWith('00')) {
+            const formatted = '+62' + value.substring(1);
+            control.setValue(formatted, { emitEvent: false });
+          }
+        });
+      }
     });
   }
 
@@ -210,11 +248,45 @@ export class ClientEditComponent implements OnInit {
     const control = this.clientForm.get(field);
     if (control?.hasError('required')) return 'This field is required';
     if (control?.hasError('email')) return 'Invalid email address';
+    if (control?.hasError('minlength')) {
+      const min = control.getError('minlength').requiredLength;
+      return `Minimum ${min} characters required`;
+    }
     if (control?.hasError('maxlength')) {
       const max = control.getError('maxlength').requiredLength;
-      return `Maximum ${max} characters`;
+      return `Maximum ${max} characters allowed`;
     }
     return '';
+  }
+
+  /**
+   * Get character count for a field
+   */
+  getCharCount(field: string): number {
+    const value = this.clientForm.get(field)?.value;
+    return value ? value.length : 0;
+  }
+
+  /**
+   * Get validation limits for a field
+   */
+  getValidationLimits(field: string): { min: number; max: number } | null {
+    const limits: Record<string, { min: number; max: number }> = {
+      companyName: VALIDATION.COMPANY_NAME,
+      clientName: VALIDATION.CLIENT_NAME,
+      email: VALIDATION.EMAIL,
+      phone: VALIDATION.PHONE,
+      industry: VALIDATION.INDUSTRY,
+      city: VALIDATION.CITY,
+      country: VALIDATION.COUNTRY,
+      address: VALIDATION.ADDRESS,
+      picName: VALIDATION.PIC_NAME,
+      picEmail: VALIDATION.PIC_EMAIL,
+      picPhone: VALIDATION.PIC_PHONE,
+      picPosition: VALIDATION.PIC_POSITION,
+      notes: VALIDATION.NOTES,
+    };
+    return limits[field] || null;
   }
 
   showNotification(message: string, type: 'success' | 'error'): void {
